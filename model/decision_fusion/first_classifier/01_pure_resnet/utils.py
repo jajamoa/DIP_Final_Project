@@ -7,7 +7,7 @@ def save_net(fname, net):
     with h5py.File(fname, 'w') as h5f:
         for k, v in net.state_dict().items():
             h5f.create_dataset(k, data=v.cpu().numpy())
-            
+
 def load_net(fname, net):
     with h5py.File(fname, 'r') as h5f:
         for k, v in net.state_dict().items():        
@@ -19,4 +19,6 @@ def save_checkpoint(state, is_best,task_id, epoch, filename='checkpoint.pth', pa
             os.makedirs(path)        
     if is_best: 
         torch.save(state,path + "/" + task_id + "_" + str(epoch)+ filename)
-        shutil.copyfile(path + "/" + task_id + "_" + str(epoch)+ filename, path + "/" + task_id+'model_best.pth')            
+        shutil.copyfile(path + "/" + task_id + "_" + str(epoch)+ filename, path + "/" + task_id+'model_best.pth')       
+        wandb.save(path + "/" + task_id + "_" + str(epoch) + filename)     
+        wandb.save(path + "/" + task_id + 'model_best.pth')

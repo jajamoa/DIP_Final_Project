@@ -10,6 +10,7 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 
 import numpy as np
+import wandb
 import argparse
 import json
 import cv2
@@ -17,12 +18,14 @@ import dataset
 import time
 import configparser
 
+wandb.init(project="DIP Final Project 2020")
+
 parser = argparse.ArgumentParser(description='PyTorch DIP2020')
 
 parser.add_argument('--config', '-c', metavar='CONFIG',type=str,
                     help='path to confg file')
 
-parser.add_argument('--pre', '-p', metavar='PRETRAINED', default=None,type=str,
+parser.add_argument('--pre', '-p', metavar='PRETRAINED', default=None, type=str,
                     help='path to the pretrained model')
 
 parser.add_argument('--batch_size', '-bs', metavar='BATCHSIZE' ,type=int,
@@ -31,7 +34,7 @@ parser.add_argument('--batch_size', '-bs', metavar='BATCHSIZE' ,type=int,
 parser.add_argument('--gpu',metavar='GPU', type=str,
                     help='GPU id to use.', default="5")
 
-parser.add_argument('--task',metavar='TASKID', type=str,
+parser.add_argument('--task',metavar='TASKID', type=str, default=wandb.run.name, 
                     help='Task id of this run.')
 
 def create_dir_not_exist(path):
@@ -56,8 +59,9 @@ def main():
     args.workers = 4
     args.seed = time.time()
     args.print_freq = 30
-    
-    
+    wandb.config.update(args)
+    wandb.run.name = f"Default_{wandb.run.name}" if (args.task == wandb.run.name) else f"{args.task}_{wandb.run.name}"
+
     conf= configparser.ConfigParser()
     conf.read(args.config) 
     print(conf)
@@ -83,6 +87,7 @@ def main():
         with open(os.path.join(LOG_DIR, args.task + ".txt"), "a") as f:
             f.write("epoch " + str(epoch) + "  BCELoss: " +str(float(prec1)))
             f.write("\n")
+        wandb.save(os.path.join(LOG_DIR, args.task + ".txt"))
         is_best = prec1 < best_prec1
         best_prec1 = min(prec1, best_prec1)
         print(' * best BCELoss {BCELoss:.3f} '.format(BCELoss=best_prec1))
@@ -122,10 +127,11 @@ def train(train_list, model, criterion, optimizer, epoch):
             print('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  'Loss {lossval:.4f} ({lossavg:.4f})\t'
                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses))
+                   data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
+    wandb.log({'epoch': epoch, 'BCEloss': losses.avg/args.batch_size})
 
 def validate(val_list, model, criterion):
     print ('begin test')
@@ -136,11 +142,12 @@ def validate(val_list, model, criterion):
         for i,(img, target) in enumerate(test_loader):
             img = img.cuda()
             img = img.type(torch.FloatTensor)
-            target = target.type(torch.FloatTensor).unsqueeze(1).cuda()
+            target = target.type(torch.FloatTensor).squeeze(1).cuda()
             _, output = model(target, img)
             BCELoss += criterion(output.data, target)
     BCELoss = BCELoss/len(test_loader)/args.batch_size
     print(' * BCELoss {BCELoss:.3f} '.format(BCELoss=BCELoss))
+    wandb.log({'epoch': epoch, 'BCEloss': BCELoss})
     return BCELoss
 
 
@@ -156,6 +163,7 @@ def adjust_learning_rate(optimizer, epoch):
             break
     for param_group in optimizer.param_groups:
         param_group['lr'] = args.lr
+    wandb.log({'epoch': epoch, 'Learning Rate': args.lr})
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
