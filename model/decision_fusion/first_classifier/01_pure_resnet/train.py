@@ -34,6 +34,12 @@ parser.add_argument('--gpu',metavar='GPU', type=str,
 parser.add_argument('--task',metavar='TASKID', type=str,
                     help='Task id of this run.')
 
+def create_dir_not_exist(path):
+    for length in range(1, len(path.split(os.path.sep))):
+        check_path = os.path.sep.join(path.split(os.path.sep)[:(length+1)])
+        if not os.path.exists(check_path):
+            os.mkdir(check_path)
+            print(f'Created Dir: {check_path}')
 
 def main():
     global args, best_prec1
@@ -59,6 +65,7 @@ def main():
     VALID_DIR = conf.get("pure_resnet", "valid") 
     TEST_DIR = conf.get("pure_resnet", "test") 
     LOG_DIR = conf.get("pure_resnet", "log") 
+    create_dir_not_exist(LOG_DIR)
     train_list = [os.path.join(TRAIN_DIR, item) for item in os.listdir(TRAIN_DIR)]
     val_list = [os.path.join(VALID_DIR, item) for item in os.listdir(VALID_DIR)]
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
