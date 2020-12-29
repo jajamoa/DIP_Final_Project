@@ -83,7 +83,7 @@ def main():
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
         train(train_list, model, criterion, optimizer, epoch)
-        prec1 = validate(val_list, model, criterion)
+        prec1 = validate(val_list, model, criterion, epoch)
         with open(os.path.join(LOG_DIR, args.task + ".txt"), "a") as f:
             f.write("epoch " + str(epoch) + "  BCELoss: " +str(float(prec1)))
             f.write("\n")
@@ -131,9 +131,9 @@ def train(train_list, model, criterion, optimizer, epoch):
                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
-    wandb.log({'epoch': epoch, 'BCEloss': losses.avg/args.batch_size})
+    wandb.log({'BCEloss': losses.avg/args.batch_size})
 
-def validate(val_list, model, criterion):
+def validate(val_list, model, criterion, epoch):
     print ('begin test')
     test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list), batch_size=args.batch_size, shuffle = False)
     model.eval()
@@ -163,7 +163,7 @@ def adjust_learning_rate(optimizer, epoch):
             break
     for param_group in optimizer.param_groups:
         param_group['lr'] = args.lr
-    wandb.log({'epoch': epoch, 'Learning Rate': args.lr})
+    wandb.log({'Learning Rate': args.lr})
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
