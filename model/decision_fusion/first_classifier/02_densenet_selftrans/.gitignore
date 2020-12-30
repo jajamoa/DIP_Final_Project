@@ -1,0 +1,4 @@
+model_backup/
+model_result/
+*/__pycache__
+MyData/slice-level/
