@@ -9,8 +9,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 
-
-
 import numpy as np
 import wandb
 import argparse
@@ -50,6 +48,13 @@ def create_dir_not_exist(path):
             os.mkdir(check_path)
             print(f'Created Dir: {check_path}')
 
+def checkSuffix(file_list):
+    img_suffixs=['png']
+    for file in file_list:
+        if not (file.split('.')[-1] in img_suffixs):
+            file_list.remove(file)
+    return file_list
+            
 def main():
     global args, best_prec1
     best_prec1 = 1e6
@@ -59,7 +64,7 @@ def main():
     args.momentum  = 0.95
     args.decay  = 5*1e-4
     args.start_epoch   = 0
-    args.epochs = 10
+    args.epochs = 100
     args.steps = [-1,1,100,150]
     args.scales = [1,1,1,1]
     args.workers = 0
@@ -77,14 +82,17 @@ def main():
     LOG_DIR = conf.get("selfTransNet", "log") 
     create_dir_not_exist(LOG_DIR)
     train_list = [os.path.join(TRAIN_DIR, item) for item in os.listdir(TRAIN_DIR)]
+    train_list=checkSuffix(train_list)
     val_list = [os.path.join(VALID_DIR, item) for item in os.listdir(VALID_DIR)]
+    val_list=checkSuffix(val_list)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     torch.cuda.manual_seed(args.seed)
-    torch.cuda.empty_cache()
+
+    
     model = selfTransNet(pretrained_net=args.selftrans)
     model = model.cuda()
     
-    criterion = nn.BCELoss(size_average = False).cuda()
+    criterion = nn.CrossEntropyLoss().cuda()
     optimizer = torch.optim.Adam(model.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.decay)
     model = DataParallel_withLoss(model, criterion)
 
@@ -93,12 +101,12 @@ def main():
         train(train_list, model, criterion, optimizer, epoch)
         prec1 = validate(val_list, model, criterion, epoch)
         with open(os.path.join(LOG_DIR, args.task + ".txt"), "a") as f:
-            f.write("epoch " + str(epoch) + "  BCELoss: " +str(float(prec1)))
+            f.write("epoch " + str(epoch) + "  CELoss: " +str(float(prec1)))
             f.write("\n")
         wandb.save(os.path.join(LOG_DIR, args.task + ".txt"))
         is_best = prec1 < best_prec1
         best_prec1 = min(prec1, best_prec1)
-        print(' * best BCELoss {BCELoss:.3f} '.format(BCELoss=best_prec1))
+        print(' * best CELoss {CELoss:.3f} '.format(CELoss=best_prec1))
         save_checkpoint({
             'epoch': epoch + 1,
             'arch': args.pre,
@@ -114,7 +122,9 @@ def train(train_list, model, criterion, optimizer, epoch):
     data_time = AverageMeter()
     train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
     print('epoch %d, processed %d samples, lr %.10f' % (epoch, epoch * len(train_loader.dataset), args.lr))
+    
 
+    
     model.train()
     end = time.time()
     for i,(img, target)in enumerate(train_loader):
@@ -140,24 +150,24 @@ def train(train_list, model, criterion, optimizer, epoch):
                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
-    wandb.log({'BCEloss': losses.avg/args.batch_size})
+    wandb.log({'CEloss': losses.avg/args.batch_size})
 
 def validate(val_list, model, criterion, epoch):
     print ('begin test')
     test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list), batch_size=args.batch_size, shuffle = False)
     model.eval()
-    BCELoss = 0
+    CELoss = 0
     with torch.no_grad():
         for i,(img, target) in enumerate(test_loader):
             img = img.cuda()
             img = img.type(torch.FloatTensor)
             target = target.type(torch.FloatTensor).squeeze(1).cuda()
             _, output = model(target, img)
-            BCELoss += criterion(output.data, target)
-    BCELoss = BCELoss/len(test_loader)/args.batch_size
-    print(' * BCELoss {BCELoss:.3f} '.format(BCELoss=BCELoss))
-    wandb.log({'epoch': epoch, 'BCEloss': BCELoss})
-    return BCELoss
+            CELoss += criterion(output.data,torch.topk(target.long(), 1)[1].squeeze(1))
+    CELoss = CELoss/len(test_loader)/args.batch_size
+    print(' * CELoss {CELoss:.3f} '.format(CELoss=CELoss))
+    wandb.log({'epoch': epoch, 'CEloss': CELoss})
+    return CELoss
 
 
 def adjust_learning_rate(optimizer, epoch):
@@ -199,8 +209,7 @@ class FullModel(nn.Module):
 
     def forward(self, targets, *inputs):
         outputs = self.model(*inputs)
-        #print(outputs.shape)
-        loss = self.loss(outputs, targets)
+        loss = self.loss(outputs, torch.topk(targets.long(), 1)[1].squeeze(1))
         return torch.unsqueeze(loss, 0), outputs
 
 def DataParallel_withLoss(model,loss,**kwargs):
