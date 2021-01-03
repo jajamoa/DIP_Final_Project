@@ -13,6 +13,7 @@ class listDataset(Dataset):
         random.shuffle(root)
         self.nSamples = len(root)
         self.lines = root
+        self.train = train
 
     def __len__(self):
         return self.nSamples
@@ -20,7 +21,7 @@ class listDataset(Dataset):
     def __getitem__(self, index):
         assert index <= len(self), 'index range error'         
         img_path = self.lines[index]
-        img, label = load_data(img_path)
+        img, label = load_data(img_path,self.train)
         return img, label
 
 

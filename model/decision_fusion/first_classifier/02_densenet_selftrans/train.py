@@ -120,7 +120,7 @@ def train(train_list, model, criterion, optimizer, epoch):
     losses = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
+    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list,train=True), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
     print('epoch %d, processed %d samples, lr %.10f' % (epoch, epoch * len(train_loader.dataset), args.lr))
     
 
@@ -154,7 +154,7 @@ def train(train_list, model, criterion, optimizer, epoch):
 
 def validate(val_list, model, criterion, epoch):
     print ('begin test')
-    test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list), batch_size=args.batch_size, shuffle = False)
+    test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list,train=False), batch_size=args.batch_size, shuffle = False)
     model.eval()
     CELoss = 0
     with torch.no_grad():
