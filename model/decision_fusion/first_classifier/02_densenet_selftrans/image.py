@@ -47,6 +47,39 @@ def load_data(img_path, train = True):
     return image, label
 
 
+def load_data_subject(img_path, train = True):
+
+
+    normalize = transforms.Normalize(mean=[0.45271412, 0.45271412, 0.45271412],
+                                        std=[0.33165374, 0.33165374, 0.33165374])
+    if train:
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.RandomResizedCrop((224),scale=(0.5,1.0)),
+            transforms.RandomHorizontalFlip(),
+        #     transforms.RandomRotation(90),
+            # random brightness and random contrast
+            transforms.ColorJitter(brightness=0.2, contrast=0.2),
+            transforms.ToTensor(),
+            normalize
+        ])
+    else:
+        transform = transforms.Compose([
+        #     transforms.Resize(224),
+        #     transforms.CenterCrop(224),
+            transforms.Resize((224,224)),
+            transforms.ToTensor(),
+            normalize
+        ])
+
+
+    image = Image.open(img_path).convert('RGB')
+    image = transform(image)
+
+    image =np.array(image)
+    
+    return image
+
 def load_data_moco(img_path, train = True , aug_plus=True):
     
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],

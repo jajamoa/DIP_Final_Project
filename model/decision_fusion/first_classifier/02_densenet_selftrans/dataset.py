@@ -40,3 +40,20 @@ class mocoDataset(Dataset):
         img_path = self.lines[index]
         imgs, label = load_data_moco(img_path,aug_plus=self.aug_plus)
         return imgs, label
+
+class subjectDataset(Dataset):
+    def __init__(self, root, label , train=False):
+        random.shuffle(root)
+        self.nSamples = len(root)
+        self.lines = root
+        self.train = train
+        self.label = label
+
+    def __len__(self):
+        return self.nSamples
+
+    def __getitem__(self, index):
+        assert index <= len(self), 'index range error'         
+        img_path = self.lines[index]
+        img = load_data_subject(img_path,self.train)
+        return img, self.label
