@@ -1,13 +1,19 @@
-import os
+import os,sys
 import random
 
 import pandas as pd
+import csv
 from tqdm import tqdm
 from shutil import copyfile
 
-ROOT_DOR = '..\\..\\data\\trainData\\slice-level'
-csv_name = 'Slice_level_label.csv'
+ROOT_DOR_SLICE = '../../data/trainData/slice-level'
+csv_name_slice = 'Slice_level_label.csv'
 slice_roots = ['Cap', 'Covid-19']
+
+ROOT_DOR_SUBJECT = '../../data/trainData/subject-level'
+csv_name_subject = 'pseudo_label.csv'
+
+RESULT_DOR = '../../data'
 
 TRAIN_RATE = 0.6
 VAL_RATE = 0.3
@@ -27,9 +33,9 @@ def create_dir_not_exist(path):
 def get_slice_path_labels():
     image_labels = []
 
-    df = pd.read_csv(os.path.join(ROOT_DOR, csv_name), index_col=0)
+    df = pd.read_csv(os.path.join(ROOT_DOR_SLICE, csv_name_slice), index_col=0)
     for slice_root in slice_roots:
-        person_root = os.path.join(ROOT_DOR, slice_root)
+        person_root = os.path.join(ROOT_DOR_SLICE, slice_root)
         person_names = os.listdir(person_root)
 
         i = 0
@@ -70,16 +76,25 @@ def get_slice_path_labels():
 
     return image_labels
 
+def get_subject_path_labels():
+    with open(os.path.join(ROOT_DOR_SUBJECT,csv_name_subject), 'r') as f:
+        csvreader = csv.reader(f)
+        subject_list = list(csvreader)
+        subject_list=[(os.path.join(ROOT_DOR_SUBJECT,os.path.sep.join(item[1:])),int(item[0])) for item in subject_list]
+        return subject_list
 
 def shuffle_save():
-    image_labels = get_slice_path_labels()
-    image_labels.sort()
+    image_labels_slice = get_slice_path_labels()
+    image_labels_subject = get_subject_path_labels()
+    image_labels_slice.sort()
+    image_labels_subject.sort()
+    image_labels=image_labels_slice+image_labels_subject
+    
+    print(image_labels[:10])
 
     random.shuffle(image_labels)
 
-    dor_split=ROOT_DOR.split(os.path.sep)
-    dor_split=dor_split[:-2]+['first_classifier']
-    dor=os.path.sep.join(dor_split)
+    dor=os.path.join(RESULT_DOR,'pseudo')
     create_dir_not_exist(os.path.join(dor, "train"))
     create_dir_not_exist(os.path.join(dor, "test"))
     create_dir_not_exist(os.path.join(dor, "val"))
@@ -92,12 +107,10 @@ def shuffle_save():
             root = 'val'
         else:
             root = 'test'
-        s = name.split(os.path.sep)
-        s[-1]='img'+str(i).rjust(5,'0')+'_'+str(label)+'.png'
-        s = s[:3] + [s[-1]]
-        s.insert(-1, 'first_classifier')
-        s.insert(-1, root)
-        newname = os.path.sep.join(s)
+
+        img_name='img'+str(i).rjust(5,'0')+'_'+str(label)+'.png'
+        newname = os.path.join(dor,root)
+        newname = os.path.join(newname,img_name)
 
         copyfile(name,newname)
 
