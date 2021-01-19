@@ -104,7 +104,7 @@ def train(train_list, model, criterion, optimizer, epoch):
     losses = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
+    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list, train = True), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
     print('epoch %d, processed %d samples, lr %.10f' % (epoch, epoch * len(train_loader.dataset), args.lr))
     model.train()
     end = time.time()

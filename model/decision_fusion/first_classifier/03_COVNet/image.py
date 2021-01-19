@@ -42,7 +42,7 @@ def do_augmentation(array):
         return augmented[0]
 
 
-def load_data(folder_path, train = True):
+def load_data(folder_path, train = False):
     transform = transforms.Compose([
                        transforms.ToTensor(),
                        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
@@ -68,7 +68,8 @@ def load_data(folder_path, train = True):
             image_set =  torch.cat([image_set, image], axis = 0)
             # print(image_set.size())
 
-    image_set = torch.FloatTensor(do_augmentation(np.array(image_set)))
+    if train:
+        image_set = torch.FloatTensor(do_augmentation(np.array(image_set)))
     label_index = int(folder_path.split(os.path.sep)[-1][0])
     assert label_index in [0, 1, 2]
     ones = torch.sparse.torch.eye(3)
