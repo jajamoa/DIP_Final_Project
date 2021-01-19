@@ -1,7 +1,6 @@
 import os
 import shutil
 import random
-from tqdm import tqdm
 import multiprocessing
 
 ROOT = r'../../data'
@@ -12,6 +11,16 @@ ROOT_NEW = os.path.join(ROOT, 'end-to-end-para')
 assert os.path.exists(ROOT)
 assert os.path.exists(ROOT_SLICE_LEVEL)
 assert os.path.exists(ROOT_SUBJECT_LEVEL)
+
+def remove_invalid(patient_root:str):
+    assert os.path.exists(patient_root)
+    assert os.path.isdir(patient_root)
+
+    image_list=os.listdir(patient_root)
+    for img in image_list:
+        if img.startswith('.'):
+            root_del=os.path.join(patient_root,img)
+            os.remove(root_del)
 
 SEED = 10
 
@@ -59,6 +68,8 @@ def move(para):
 
     assert os.path.exists(proot)
     assert os.path.isdir(proot)
+    remove_invalid(proot)
+
     proot_split = proot.split(os.path.sep)
 
     if i <= int(prp['train'] * len(list_patient_roots)):
