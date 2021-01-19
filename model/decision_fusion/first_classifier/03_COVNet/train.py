@@ -1,7 +1,7 @@
 import sys
 import os
 import warnings
-from model import resnet50
+from model import COVNet
 from utils import save_checkpoint
 
 import torch
@@ -65,16 +65,16 @@ def main():
     conf= configparser.ConfigParser()
     conf.read(args.config) 
     print(conf)
-    TRAIN_DIR = conf.get("pure_resnet", "train") 
-    VALID_DIR = conf.get("pure_resnet", "valid") 
-    TEST_DIR = conf.get("pure_resnet", "test") 
-    LOG_DIR = conf.get("pure_resnet", "log") 
+    TRAIN_DIR = conf.get("COVNet", "train") 
+    VALID_DIR = conf.get("COVNet", "valid") 
+    TEST_DIR = conf.get("COVNet", "test") 
+    LOG_DIR = conf.get("COVNet", "log") 
     create_dir_not_exist(LOG_DIR)
     train_list = [os.path.join(TRAIN_DIR, item) for item in os.listdir(TRAIN_DIR)]
     val_list = [os.path.join(VALID_DIR, item) for item in os.listdir(VALID_DIR)]
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     torch.cuda.manual_seed(args.seed)
-    model = resnet50()
+    model = COVNet(3)
     model = model.cuda()
     criterion = nn.BCELoss(size_average = False).cuda()
     optimizer = torch.optim.Adam(model.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.decay)
@@ -131,7 +131,7 @@ def train(train_list, model, criterion, optimizer, epoch):
                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
-    wandb.log({'Train Loss': losses.avg/args.batch_size})
+    wandb.log({'Train loss': losses.avg/args.batch_size})
 
 def validate(val_list, model, criterion, epoch):
     print ('begin test')
@@ -147,7 +147,7 @@ def validate(val_list, model, criterion, epoch):
             BCELoss += criterion(output.data, target)
     BCELoss = BCELoss/len(test_loader)/args.batch_size
     print(' * BCELoss {BCELoss:.3f} '.format(BCELoss=BCELoss))
-    wandb.log({'epoch': epoch, 'Val Loss': BCELoss})
+    wandb.log({'epoch': epoch, 'Valid loss': BCELoss})
     return BCELoss
 
 
