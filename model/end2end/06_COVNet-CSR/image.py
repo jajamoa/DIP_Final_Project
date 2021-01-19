@@ -29,12 +29,10 @@ def do_augmentation(array):
 
         augmented, _ = spatial_transforms.augment_spatial(
             augmented, patch_size=patch_size, seg=None,
-            # do_elastic_deform=True, alpha=(0., 100.), sigma=(8., 13.),
             do_rotation=True, angle_x=r_range, angle_y=r_range, angle_z=r_range,
             do_scale=True, scale=(.9, 1.1),
             border_mode_data='constant', border_cval_data=cval,
             order_data=3,
-            # p_el_per_sample=0.5,
             p_scale_per_sample=.5,
             p_rot_per_sample=.5,
             random_crop=False
