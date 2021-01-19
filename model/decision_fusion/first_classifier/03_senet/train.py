@@ -17,6 +17,7 @@ import cv2
 import dataset
 import time
 import configparser
+import random
 
 
 wandb.init(project="DIP Final Project 2020")
@@ -32,6 +33,9 @@ parser.add_argument('--pre', '-p', metavar='PRETRAINED', default=None, type=str,
 
 parser.add_argument('--batch_size', '-bs', metavar='BATCHSIZE' ,type=int,
                     help='batch size', default=2)
+
+parser.add_argument('--k_flod', '-k', metavar='KFOLD' ,type=int,
+                    help='k-fold size', default=10)
 
 parser.add_argument('--gpu',metavar='GPU', type=str,
                     help='GPU id to use.', default="0")
@@ -62,8 +66,8 @@ def main():
     args.momentum  = 0.95
     args.decay  = 5*1e-4
     args.start_epoch   = 0
-    args.epochs = 100
-    args.steps = [-1,1,20,50]
+    args.epochs = 50
+    args.steps = [-1,1,20,40]
     args.scales = [1,1,0.5,0.5]
     args.workers = 0
     args.seed = time.time()
@@ -83,6 +87,9 @@ def main():
     train_list=checkSuffix(train_list)
     val_list = [os.path.join(VALID_DIR, item) for item in os.listdir(VALID_DIR)]
     val_list=checkSuffix(val_list)
+    data_list= train_list+val_list
+    random.shuffle(data_list)
+    
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     torch.cuda.manual_seed(args.seed)
 
@@ -91,27 +98,52 @@ def main():
     model = model.cuda()
     
     criterion = nn.CrossEntropyLoss().cuda()
-    optimizer = torch.optim.Adam(model.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.decay)
     model = DataParallel_withLoss(model, criterion)
 
-    for epoch in range(args.start_epoch, args.epochs):
-        adjust_learning_rate(optimizer, epoch)
-        train(train_list, model, criterion, optimizer, epoch)
-        prec1 = validate(val_list, model, criterion, epoch)
-        with open(os.path.join(LOG_DIR, args.task + ".txt"), "a") as f:
-            f.write("epoch " + str(epoch) + "  CELoss: " +str(float(prec1)))
-            f.write("\n")
-        wandb.save(os.path.join(LOG_DIR, args.task + ".txt"))
-        is_best = prec1 < best_prec1
-        best_prec1 = min(prec1, best_prec1)
-        print(' * best CELoss {CELoss:.3f} '.format(CELoss=best_prec1))
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'arch': args.pre,
-            'state_dict': model.state_dict(),
-            'best_prec1': best_prec1,
-            'optimizer' : optimizer.state_dict(),
-        }, is_best,args.task, epoch = epoch,path=os.path.join(LOG_DIR, args.task))
+    for i in range(args.k_fold):
+        train_list,val_list=get_k_fold_data(i,data_list)
+        args.lr=args.original_lr
+        best_prec1 = 1e6
+        optimizer = torch.optim.Adam(model.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.decay)
+
+        for epoch in range(args.start_epoch, args.epochs):
+            adjust_learning_rate(optimizer, epoch)
+            train_loss = train(train_list, model, criterion, optimizer, epoch)
+            prec1 = validate(val_list, model, criterion, epoch)
+            with open(os.path.join(LOG_DIR, args.task + ".txt"), "a") as f:
+                f.write("K "+str(i) +" epoch " + str(epoch) +  "  TrainLoss: " +str(float(train_loss))+
+                "  ValLoss: " +str(float(prec1)))
+                f.write("\n")
+            wandb.log({'K':i,'epoch': epoch, 'TrainCEloss': train_loss,'ValCEloss':prec1})
+            wandb.save(os.path.join(LOG_DIR, args.task + ".txt"))
+            is_best = prec1 < best_prec1
+            best_prec1 = min(prec1, best_prec1)
+            print(' * best CELoss {CELoss:.3f} '.format(CELoss=best_prec1))
+            save_checkpoint({
+                'k':i,
+                'epoch': epoch + 1,
+                'arch': args.pre,
+                'state_dict': model.state_dict(),
+                'best_prec1': best_prec1,
+                'optimizer' : optimizer.state_dict(),
+            }, is_best,args.task, epoch = epoch,path=os.path.join(LOG_DIR, args.task))
+
+
+########k_fold############        
+def get_k_fold_data(i, datalist): 
+    k=args.k_flod
+    assert k > 1
+    fold_size = len(datalist) // k  # 每份的个数:数据总条数/折数（组数）
+    
+    train_list=[]
+    for j in range(k):
+        idx = slice(j * fold_size, (j + 1) * fold_size)  #slice(start,end,step)切片函数
+        data_part = datalist[idx]
+        if j == i: ###第i折作valid
+            valid_list = data_part
+        else:
+            train_list += data_part
+    return train_list,valid_list
 
 
 def train(train_list, model, criterion, optimizer, epoch):
@@ -148,7 +180,9 @@ def train(train_list, model, criterion, optimizer, epoch):
                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
-    wandb.log({'CEloss': losses.avg/args.batch_size})
+    CEloss=losses.avg/args.batch_size
+    return CEloss
+    
 
 def validate(val_list, model, criterion, epoch):
     print ('begin test')
@@ -164,7 +198,6 @@ def validate(val_list, model, criterion, epoch):
             CELoss += criterion(output.data,torch.topk(target.long(), 1)[1].squeeze(1))
     CELoss = CELoss/len(test_loader)/args.batch_size
     print(' * CELoss {CELoss:.3f} '.format(CELoss=CELoss))
-    wandb.log({'epoch': epoch, 'CEloss': CELoss})
     return CELoss
 
 
