@@ -126,7 +126,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=3, zero_init_residual=False,
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
@@ -356,6 +356,7 @@ class COVNet(nn.Module):
         self.pooling_layer = nn.AdaptiveAvgPool2d(1)
         self.classifer = nn.Linear(2048, n_classes)
         self.n_classes = n_classes
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = torch.squeeze(x, dim=0)
@@ -364,4 +365,5 @@ class COVNet(nn.Module):
         pooled_features = pooled_features.view(pooled_features.size(0), -1)
         flattened_features = torch.max(pooled_features, 0, keepdim=True)[0]
         output = self.classifer(flattened_features)
+        output = self.softmax(output)
         return output
