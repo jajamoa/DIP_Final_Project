@@ -357,6 +357,7 @@ class COVNet(nn.Module):
         self.classifer = nn.Linear(2048, n_classes)
         self.n_classes = n_classes
         self.softmax = nn.Softmax(dim=1)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
         x = torch.squeeze(x, dim=0)
@@ -364,6 +365,7 @@ class COVNet(nn.Module):
         pooled_features = self.pooling_layer(features)
         pooled_features = pooled_features.view(pooled_features.size(0), -1)
         flattened_features = torch.max(pooled_features, 0, keepdim=True)[0]
+        flattened_features = self.dropout(flattened_features)
         output = self.classifer(flattened_features)
         output = self.softmax(output)
         return output
