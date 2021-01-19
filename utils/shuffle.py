@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from shutil import copyfile
 
-ROOT_DOR = r'../../data/trainData/slice-level'
+ROOT_DOR = '..\\..\\data\\trainData\\slice-level'
 csv_name = 'Slice_level_label.csv'
 slice_roots = ['Cap', 'Covid-19']
 
@@ -13,6 +13,15 @@ TRAIN_RATE = 0.6
 VAL_RATE = 0.3
 TEST_RATE = 0.1
 assert TRAIN_RATE + VAL_RATE + TEST_RATE - 1.0 < 0.0001
+
+random.seed(123)
+
+def create_dir_not_exist(path):
+    for length in range(1, len(path.split(os.path.sep))):
+        check_path = os.path.sep.join(path.split(os.path.sep)[:(length+1)])
+        if not os.path.exists(check_path):
+            os.mkdir(check_path)
+            print(f'Created Dir: {check_path}')
 
 
 def get_slice_path_labels():
@@ -64,7 +73,17 @@ def get_slice_path_labels():
 
 def shuffle_save():
     image_labels = get_slice_path_labels()
+    image_labels.sort()
+
     random.shuffle(image_labels)
+
+    dor_split=ROOT_DOR.split(os.path.sep)
+    dor_split=dor_split[:-2]+['first_classifier']
+    dor=os.path.sep.join(dor_split)
+    create_dir_not_exist(os.path.join(dor, "train"))
+    create_dir_not_exist(os.path.join(dor, "test"))
+    create_dir_not_exist(os.path.join(dor, "val"))
+
 
     for i, (name, label) in tqdm(enumerate(image_labels)):
         if i <= len(image_labels) * TRAIN_RATE:
