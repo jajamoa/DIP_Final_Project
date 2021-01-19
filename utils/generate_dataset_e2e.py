@@ -6,7 +6,7 @@ import multiprocessing
 ROOT = r'../../data'
 ROOT_SUBJECT_LEVEL = os.path.join(ROOT, 'trainData', 'subject-level')
 ROOT_SLICE_LEVEL = os.path.join(ROOT, 'trainData', 'slice-level')
-ROOT_NEW = os.path.join(ROOT, 'end-to-end')
+ROOT_NEW = os.path.join(ROOT, 'end-to-end-para')
 
 assert os.path.exists(ROOT)
 assert os.path.exists(ROOT_SLICE_LEVEL)
@@ -69,6 +69,10 @@ def move(para):
     assert os.path.exists(proot)
     assert os.path.isdir(proot)
     remove_invalid(proot)
+
+    if (os.listdir(proot) == []):
+        print(f'{proot} IS EMPTY!!')
+        return
 
     proot_split = proot.split(os.path.sep)
 
