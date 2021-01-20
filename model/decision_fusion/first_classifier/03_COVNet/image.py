@@ -61,7 +61,6 @@ def load_data(folder_path, n ,train = False):
     first = True
 
     img_path_list = []
-    gray_classes = []
     for img_path in os.listdir(folder_path):
         if (img_path[0] == '.'):
             continue
@@ -72,10 +71,10 @@ def load_data(folder_path, n ,train = False):
         step = int(np.floor(total / n))
         img_path_list = img_path_list[:step*n:step]
 
-
     for img_path in img_path_list:
         image = Image.open(os.path.join(folder_path, img_path)).convert('RGB')
-        gray_classes.append(graygate(image,1000))
+        if first:
+            gray_class=graygate(image,1000)
         image = transform(image)
         image = image.unsqueeze(dim = 0)
         # print(image.size())
@@ -92,4 +91,4 @@ def load_data(folder_path, n ,train = False):
     assert label_index in [0, 1, 2]
     ones = torch.sparse.torch.eye(3)
     label = ones.index_select(0, torch.tensor([label_index]))
-    return image_set, label , gray_classes
+    return image_set, label , gray_class

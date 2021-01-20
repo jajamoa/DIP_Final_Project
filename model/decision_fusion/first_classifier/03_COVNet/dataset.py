@@ -23,4 +23,4 @@ class listDataset(Dataset):
         assert index <= len(self), 'index range error'         
         img_path = self.lines[index]
         img, label,gray_classes = load_data(img_path, train = self.train ,n=self.n )
-        return img, label,gray_classes
+        return img, label,gray_class

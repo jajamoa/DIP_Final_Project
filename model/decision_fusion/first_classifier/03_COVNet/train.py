@@ -59,7 +59,7 @@ def main():
     args.epochs = 100
     args.steps = [-1,1,100,150]
     args.scales = [1,1,1,1]
-    args.workers = 4
+    args.workers = 16
     args.seed = time.time()
     args.print_freq = 30
     wandb.config.update(args)
@@ -77,16 +77,19 @@ def main():
     val_list = [os.path.join(VALID_DIR, item) for item in os.listdir(VALID_DIR)]
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     torch.cuda.manual_seed(args.seed)
-    model = COVNet(3)
-    model = model.cuda()
+    model1 = COVNet(3)
+    model1 = model1.cuda()
+    model2 = COVNet(3)
+    model2 = model2.cuda()
     criterion = nn.BCELoss(size_average = False).cuda()
-    optimizer = torch.optim.Adam(model.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.decay)
-    model = DataParallel_withLoss(model, criterion)
+    optimizer = torch.optim.Adam(model1.parameters(), args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=args.decay)
+    model1 = DataParallel_withLoss(model1, criterion)
+    model2 = DataParallel_withLoss(model2, criterion)
 
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
-        train(train_list, model, criterion, optimizer, epoch)
-        prec1 = validate(val_list, model, criterion, epoch)
+        train(train_list, [model1,model2], criterion, optimizer, epoch)
+        prec1 = validate(val_list, [model1,model2], criterion, epoch)
         with open(os.path.join(LOG_DIR, args.task + ".txt"), "a") as f:
             f.write("epoch " + str(epoch) + "  BCELoss: " +str(float(prec1)))
             f.write("\n")
@@ -97,28 +100,34 @@ def main():
         save_checkpoint({
             'epoch': epoch + 1,
             'arch': args.pre,
-            'state_dict': model.state_dict(),
+            'state_dict1': model1.state_dict(),
+            'state_dict2': model2.state_dict(),
             'best_prec1': best_prec1,
             'optimizer' : optimizer.state_dict(),
         }, is_best,args.task, epoch = epoch,path=os.path.join(LOG_DIR, args.task))
 
 
-def train(train_list, model, criterion, optimizer, epoch):
+def train(train_list, models, criterion, optimizer, epoch):
+    model1,model2=models[0],models[1]
     losses = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
     train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list, train = True,n=args.n), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
     print('epoch %d, processed %d samples, lr %.10f' % (epoch, epoch * len(train_loader.dataset), args.lr))
-    model.train()
+    model1.train()
+    model2.train()
     end = time.time()
-    for i,(img, target,_)in enumerate(train_loader):
+    for i,(img, target,gray_class)in enumerate(train_loader):
         data_time.update(time.time() - end)
         img = img.cuda()
         img = img.type(torch.FloatTensor)
         target = target.type(torch.FloatTensor).squeeze(1).cuda()
         # print(img.shape)
         # print(target.shape)
-        loss,_ = model(target, img)
+        if gray_class==0:
+            loss,_ = model1(target, img)
+        else:
+            loss,_ = model2(target, img)
         loss = loss.sum()
         losses.update(loss.item(), img.size(0))
         optimizer.zero_grad()
@@ -136,17 +145,22 @@ def train(train_list, model, criterion, optimizer, epoch):
                    data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
     wandb.log({'Train loss': losses.avg/args.batch_size})
 
-def validate(val_list, model, criterion, epoch):
+def validate(val_list, models, criterion, epoch):
     print ('begin test')
+    model1,model2=models[0],models[1]
     test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list,n=args.n), batch_size=args.batch_size, shuffle = False)
-    model.eval()
+    model1.eval()
+    model2.eval()
     BCELoss = 0
     with torch.no_grad():
-        for i,(img, target,_) in enumerate(test_loader):
+        for i,(img, target,gray_class) in enumerate(test_loader):
             img = img.cuda()
             img = img.type(torch.FloatTensor)
             target = target.type(torch.FloatTensor).squeeze(1).cuda()
-            _, output = model(target, img)
+            if gray_class==0:
+                _, output = model1(target, img)
+            else:
+                _, output = model2(target, img)
             BCELoss += criterion(output.data, target)
     BCELoss = BCELoss/len(test_loader)/args.batch_size
     print(' * BCELoss {BCELoss:.3f} '.format(BCELoss=BCELoss))
