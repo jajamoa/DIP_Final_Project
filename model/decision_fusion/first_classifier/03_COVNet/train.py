@@ -29,13 +29,16 @@ parser.add_argument('--pre', '-p', metavar='PRETRAINED', default=None, type=str,
                     help='path to the pretrained model')
 
 parser.add_argument('--batch_size', '-bs', metavar='BATCHSIZE' ,type=int,
-                    help='batch size', default=2)
+                    help='batch size', default=1)
 
 parser.add_argument('--gpu',metavar='GPU', type=str,
-                    help='GPU id to use.', default="5")
+                    help='GPU id to use.', default="0")
 
 parser.add_argument('--task',metavar='TASKID', type=str, default=wandb.run.name, 
                     help='Task id of this run.')
+
+parser.add_argument('--n',metavar='N', type=str, default=80, 
+                    help='Number of picture per patient.')
 
 def create_dir_not_exist(path):
     for length in range(1, len(path.split(os.path.sep))):
@@ -53,7 +56,7 @@ def main():
     args.momentum  = 0.95
     args.decay  = 5*1e-4
     args.start_epoch   = 0
-    args.epochs = 5000
+    args.epochs = 100
     args.steps = [-1,1,100,150]
     args.scales = [1,1,1,1]
     args.workers = 4
@@ -104,11 +107,11 @@ def train(train_list, model, criterion, optimizer, epoch):
     losses = AverageMeter()
     batch_time = AverageMeter()
     data_time = AverageMeter()
-    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list, train = True), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
+    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_list, train = True,n=args.n), num_workers=args.workers, batch_size=args.batch_size, shuffle = True)
     print('epoch %d, processed %d samples, lr %.10f' % (epoch, epoch * len(train_loader.dataset), args.lr))
     model.train()
     end = time.time()
-    for i,(img, target)in enumerate(train_loader):
+    for i,(img, target,_)in enumerate(train_loader):
         data_time.update(time.time() - end)
         img = img.cuda()
         img = img.type(torch.FloatTensor)
@@ -135,11 +138,11 @@ def train(train_list, model, criterion, optimizer, epoch):
 
 def validate(val_list, model, criterion, epoch):
     print ('begin test')
-    test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list), batch_size=args.batch_size, shuffle = False)
+    test_loader = torch.utils.data.DataLoader(dataset.listDataset(val_list,n=args.n), batch_size=args.batch_size, shuffle = False)
     model.eval()
     BCELoss = 0
     with torch.no_grad():
-        for i,(img, target) in enumerate(test_loader):
+        for i,(img, target,_) in enumerate(test_loader):
             img = img.cuda()
             img = img.type(torch.FloatTensor)
             target = target.type(torch.FloatTensor).squeeze(1).cuda()

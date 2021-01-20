@@ -9,11 +9,12 @@ from torchvision import transforms
 import torchvision.transforms.functional as F
 
 class listDataset(Dataset):
-    def __init__(self, root, train=False):
+    def __init__(self, root, train=False, n=20):
         random.shuffle(root)
         self.nSamples = len(root)
         self.lines = root
         self.train = train
+        self.n = n
 
     def __len__(self):
         return self.nSamples
@@ -21,5 +22,5 @@ class listDataset(Dataset):
     def __getitem__(self, index):
         assert index <= len(self), 'index range error'         
         img_path = self.lines[index]
-        img, label = load_data(img_path, train = self.train)
-        return img, label
+        img, label,gray_classes = load_data(img_path, train = self.train ,n=self.n )
+        return img, label,gray_classes
