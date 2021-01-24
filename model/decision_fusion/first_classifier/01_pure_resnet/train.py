@@ -131,7 +131,7 @@ def train(train_list, model, criterion, optimizer, epoch):
                   .format(
                    epoch, i, len(train_loader), batch_time=batch_time,
                    data_time=data_time, lossval=losses.val/args.batch_size, lossavg=losses.avg/args.batch_size))
-    wandb.log({'BCEloss': losses.avg/args.batch_size})
+    wandb.log({'Train Loss': losses.avg/args.batch_size})
 
 def validate(val_list, model, criterion, epoch):
     print ('begin test')
@@ -147,7 +147,7 @@ def validate(val_list, model, criterion, epoch):
             BCELoss += criterion(output.data, target)
     BCELoss = BCELoss/len(test_loader)/args.batch_size
     print(' * BCELoss {BCELoss:.3f} '.format(BCELoss=BCELoss))
-    wandb.log({'epoch': epoch, 'BCEloss': BCELoss})
+    wandb.log({'epoch': epoch, 'Val Loss': BCELoss})
     return BCELoss
 
 
