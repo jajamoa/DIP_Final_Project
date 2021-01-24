@@ -12,15 +12,15 @@ For a clearer version, please refer to the appendix of the REPORT
 
 ### 🔭Overview 总览
 
-![overview1](.\img\overview1.png)
+![overview1](https://github.com/LeeJAJA/DIP_Final_Project/blob/main/img/overview1.png)
 
 #### Self-Trans
 
-![overview3](D:\tongji\DIP_Final\img\overview3.png)
+![overview3](https://github.com/LeeJAJA/DIP_Final_Project/blob/main/img/overview3.png)
 
 #### COV-CSR
 
-![overview1](D:\tongji\DIP_Final\img\overview2.png)
+![overview1](https://github.com/LeeJAJA/DIP_Final_Project/blob/main/img/overview2.png)
 
 ### 🧠Methods 用到的技术
 
@@ -28,10 +28,10 @@ For a clearer version, please refer to the appendix of the REPORT
 | ------------------------------------------------------------ | ---- | ----------------------- |
 | [1x1 Convolution](https://paperswithcode.com/method/1x1-convolution) | 2013 | Convolutions            |
 | [Convolution](https://paperswithcode.com/method/convolution) | 1980 | Convolutions            |
-| [ Dilated Convolution](https://paperswithcode.com/method/dilated-convolution) | 2015 | Convolutions            |
+| [Dilated Convolution](https://paperswithcode.com/method/dilated-convolution) | 2015 | Convolutions            |
 | [1D CNN](https://paperswithcode.com/method/1d-cnn)           | 2020 | Convolutions            |
 | [Max Pooling](https://paperswithcode.com/method/max-pooling) | 2000 | Pooling Operations      |
-| [ Average Pooling](https://paperswithcode.com/method/average-pooling) | 2000 | Pooling Operations      |
+| [Average Pooling](https://paperswithcode.com/method/average-pooling) | 2000 | Pooling Operations      |
 | [Spatial Pyramid Pooling](https://paperswithcode.com/method/spatial-pyramid-pooling) | 2014 | Convolutions            |
 | [Pointwise Convolution](https://paperswithcode.com/method/pointwise-convolution) | 2016 | Convolutions            |
 | [Depthwise Convolution](https://paperswithcode.com/method/depthwise-convolution) | 2016 | Convolutions            |
@@ -39,21 +39,21 @@ For a clearer version, please refer to the appendix of the REPORT
 | [Adam](https://paperswithcode.com/method/adam)               | 2014 | Stochastic Optimization |
 | [Residual Block](https://paperswithcode.com/method/residual-block) | 2015 | Image Model Blocks      |
 | [Dense Block](https://paperswithcode.com/method/dense-block) | 2016 | Image Model Blocks      |
-| [ Bottleneck Residual Block](https://paperswithcode.com/method/bottleneck-residual-block) | 2015 | Image Model Blocks      |
+| [Bottleneck Residual Block](https://paperswithcode.com/method/bottleneck-residual-block) | 2015 | Image Model Blocks      |
 | [Squeeze-and-Excitation Block](https://paperswithcode.com/method/squeeze-and-excitation-block) | 2017 | Image Model Blocks      |
 | [Spatial Attention Module](https://paperswithcode.com/method/spatial-attention-module) | 2018 | Image Model Blocks      |
 | [CBAM](https://paperswithcode.com/method/cbam)               | 2018 | Image Model Blocks      |
-| [ Dropout](https://paperswithcode.com/method/dropout)        | 2014 | Regularization          |
-| [ Weight Decay](https://paperswithcode.com/method/weight-decay) | 1943 | Regularization          |
+| [Dropout](https://paperswithcode.com/method/dropout)        | 2014 | Regularization          |
+| [Weight Decay](https://paperswithcode.com/method/weight-decay) | 1943 | Regularization          |
 | [ResNet](https://paperswithcode.com/method/resnet)           | 2015 | Image Models            |
-| [ VGG](https://paperswithcode.com/method/vgg)                | 2014 | Image Models            |
+| [VGG](https://paperswithcode.com/method/vgg)                | 2014 | Image Models            |
 | [DenseNet](https://paperswithcode.com/method/densenet)       | 2016 | Image Models            |
 | [SENet](https://paperswithcode.com/method/senet)             | 2017 | Image Models            |
 | [Step Decay](https://paperswithcode.com/method/step-decay)   | 2000 | Learning Rate Schedules |
 | [RPN](https://paperswithcode.com/method/rpn)                 | 2015 | Region Proposal         |
-| [ RoIPool](https://paperswithcode.com/method/roi-pooling)    | 2013 | RoI Feature Extractors  |
+| [RoIPool](https://paperswithcode.com/method/roi-pooling)    | 2013 | RoI Feature Extractors  |
 | [RoIAlign](https://paperswithcode.com/method/roi-align)      | 2017 | RoI Feature Extractors  |
-| [ Dense Connections](https://paperswithcode.com/method/dense-connections) | 2000 | Feedforward Networks    |
+| [Dense Connections](https://paperswithcode.com/method/dense-connections) | 2000 | Feedforward Networks    |
 | [Softmax](https://paperswithcode.com/method/softmax)         | 2000 | Output Functions        |
 | [Heatmap](https://paperswithcode.com/method/heatmap)         | 2014 | Output Functions        |
 | [k-Means Clustering](https://paperswithcode.com/method/k-means-clustering) | 2000 | Clustering              |
