@@ -72,7 +72,7 @@ For a clearer version, please refer to the appendix of the REPORT
 
 
 
-## Technology 技术选型
+## 🛠️Technology 技术选型
 - **前端**
 
   - React
